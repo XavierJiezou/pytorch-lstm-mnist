@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 from torchvision import transforms
 from torch.optim import lr_scheduler
 from torch.utils.data import DataLoader
-from scripts.split_dataset import split_dataset
+from script.split_dataset import split_dataset
 
 
 
@@ -48,7 +48,7 @@ class TrainOnMnist():
                 plt.imshow(image.permute(1, 2, 0), cmap='gray')
                 plt.axis('off')
                 i+=1
-        save_dir = './images/'
+        save_dir = './image/'
         os.makedirs(save_dir, exist_ok=True)
         plt.savefig(os.path.join(save_dir, 'training_data_mnist.png'), dpi=300, bbox_inches='tight')
 
@@ -58,8 +58,7 @@ class TrainOnMnist():
             split: DataLoader(
                 dataset=dataset[split],
                 batch_size=self.batch_size,
-                shuffle=True,
-                num_workers=os.cpu_count()
+                shuffle=True
             ) for split in dataset
         }
         return dataloader
@@ -153,8 +152,8 @@ class TrainOnMnist():
 if __name__ == '__main__':
     TrainOnMnist(
         root='./data/mnist',
-        num_epochs=10,
-        batch_size=64,
+        num_epochs=3,
+        batch_size=256,
         input_size=28,
         time_step=28,
         lr=1e-3
