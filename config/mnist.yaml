@@ -1,0 +1,19 @@
+data:
+  data_root: ./data/mnist # Path to data
+  train_ratio: 0.8
+  val_ratio: 0.1
+  batch_size: 64 # How many samples per batch to load
+  visualize_save: ./image/training_data_mnist.png
+
+model:
+  input_size: 28 # Number of expected features in the input
+  hidden_size: 64 # Number of features in the hidden state
+  num_layers: 1 # Number of recurrent layers
+  output_size: 10 # Number of expected features in the output
+
+train:
+  num_epochs: 10 # How many epochs to use for data training
+  sequence_length: 28 # Length of the input sequence
+  learning_rate: 0.001 # Learning_rate
+  device: cuda:0 # On which a `torch.Tensor` is or will be allocated
+  save_path: ./model.pth # Path to save the trained model
