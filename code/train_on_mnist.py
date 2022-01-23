@@ -7,6 +7,7 @@ import yaml
 import torch
 from torch import nn
 from tqdm import tqdm
+from loguru import logger
 import torch.optim as optim
 from model.lstm import LSTM
 from easydict import EasyDict
@@ -17,11 +18,12 @@ from torch.utils.data import DataLoader
 from script.split_dataset import split_dataset
 
 
-
 class TrainOnMnist():
     def __init__(self, config_fname):
         self.parse_args(EasyDict(yaml.load(open(config_fname), yaml.FullLoader)))
-    
+        self.get_logger(logger)
+        self.__main__()
+
     def parse_args(self, args):
         # data options
         self.data_root = args.data.data_root
@@ -43,8 +45,24 @@ class TrainOnMnist():
         self.device = args.train.device if torch.cuda.is_available() else 'cpu'
         self.save_path = args.train.save_path
 
+        # log options
+        self.sink = args.log.sink
+        self.level = args.log.level
+        self.format = args.log.format
+
+    def get_logger(self, logger):
+        self.logger = logger
+        self.logger.remove()
+        self.logger.add(sink=self.sink, level=self.level, format=self.format)
+        self.logger.add(sink=sys.stderr, level=self.level, format=self.format)
+
     def split_dataset(self, transform=transforms.ToTensor()):
-        dataset = split_dataset(self.data_root, transform, self.train_ratio, self.val_ratio)
+        dataset = split_dataset(
+            self.data_root, 
+            transform,
+            self.train_ratio, 
+            self.val_ratio
+        )
         return dataset
 
     def visualize_data(self):
@@ -64,10 +82,11 @@ class TrainOnMnist():
                 plt.subplot(10, 10, i)
                 plt.imshow(image.permute(1, 2, 0), cmap='gray')
                 plt.axis('off')
-                i+=1
+                i += 1
         os.makedirs(os.path.split(self.visualize_save)[0], exist_ok=True)
         plt.savefig(self.visualize_save, dpi=300, bbox_inches='tight')
-        print(f'The visualization result has been saved in `{self.visualize_save}`')
+        self.logger.info(
+            f'The visualization result has been saved in `{self.visualize_save}`')
 
     def make_dataloader(self):
         dataset = self.split_dataset()
@@ -81,27 +100,32 @@ class TrainOnMnist():
         return dataloader
 
     def create_model(self):
-        model = LSTM(self.input_size, self.hidden_size, self.num_layers, self.output_size).to(self.device)
+        model = LSTM(
+            self.input_size, 
+            self.hidden_size,
+            self.num_layers, 
+            self.output_size
+        ).to(self.device)
         return model
 
     def train_model(self, model, dataloader, optimizer, scheduler, criterion):
         start_time = time.time()
         best_model_wts = copy.deepcopy(model.state_dict())
-        best_acc = 0.0
+        best_val_acc = 0.0
         for epoch in range(self.num_epochs):
             model.train()
             start_epoch_time = time.time()
-            lr = optimizer.param_groups[0]['lr']
-            print(
-                f'EPOCH: {epoch+1:0>{len(str(self.num_epochs))}}/{self.num_epochs}',
-                f'LR: {lr:.4f}',
-                end=' '
-            )
             train_loss = 0.0
             train_corrects = 0
-            for inputs, labels in tqdm(dataloader['train']):
+            epoch_print_str = f'EPOCH: {epoch+1:0>{len(str(self.num_epochs))}}/{self.num_epochs}'
+            lr_print_str = f'LR: {optimizer.param_groups[0]["lr"]:.4f}'
+            for inputs, labels in tqdm(dataloader['train'], desc=f'{epoch_print_str} STEP'):
                 optimizer.zero_grad()
-                inputs = inputs.reshape(inputs.size(0), self.sequence_length, self.input_size).to(self.device)
+                inputs = inputs.reshape(
+                    inputs.size(0), 
+                    self.sequence_length, 
+                    self.input_size
+                ).to(self.device)
                 labels = labels.to(self.device)
                 outputs = model(inputs)
                 loss = criterion(outputs, labels)
@@ -115,29 +139,26 @@ class TrainOnMnist():
             val_loss, val_acc = self.val_model(model, dataloader['val'], criterion)
             end_epoch_time = time.time()
             total_epoch_time = end_epoch_time - start_epoch_time
-            print(
-                f'TRAIN_LOSS: {train_loss:.4f}',
-                f'TRAIN_ACC: {train_acc:.4f} ',
-                f'VAL-LOSS: {val_loss:.4f}',
-                f'VAL-ACC: {val_acc:.4f} ',
-                f'EPOCH-TIME: {total_epoch_time//60:.0f}m{total_epoch_time%60:.0f}s',
-                end='\n'
+            self.logger.info(
+                ' '.join([
+                    epoch_print_str,
+                    lr_print_str,
+                    f'TRAIN_LOSS: {train_loss:.4f}',
+                    f'TRAIN_ACC: {train_acc:.4f} ',
+                    f'VAL-LOSS: {val_loss:.4f}',
+                    f'VAL-ACC: {val_acc:.4f} ',
+                    f'EPOCH-TIME: {total_epoch_time//60:.0f}m{total_epoch_time%60:.0f}s',
+                ])
             )
-            if val_acc > best_acc:
-                best_acc = val_acc
+            if val_acc > best_val_acc:
+                best_val_acc = val_acc
                 best_model_wts = copy.deepcopy(model.state_dict())
             else:
                 pass
         end_time = time.time()
         total_time = end_time-start_time
-        print('-'*10)
-        print(
-            f'TOTAL-TIME: {total_time//60:.0f}m{total_time%60:.0f}s',
-            f'BEST-VAL-ACC: {best_acc:.4f}',
-            end=' '
-        )
-        return best_model_wts
-    
+        return best_model_wts, best_val_acc, total_time
+
     def eval_model(self, model, dataloader, criterion):
         model.eval()
         eval_loss = 0.0
@@ -152,17 +173,17 @@ class TrainOnMnist():
         eval_loss /= len(dataloader.dataset)
         eval_acc = eval_corrects / len(dataloader.dataset)
         return eval_loss, eval_acc
-    
+
     def val_model(self, model, dataloader, criterion):
         val_loss, val_acc = self.eval_model(model, dataloader, criterion)
         return val_loss, val_acc
-        
+
+    def save_model(self, model_wts, save_path):
+        torch.save(model_wts, save_path)
+
     def test_model(self, model, dataloader, criterion):
         test_loss, test_acc = self.eval_model(model, dataloader, criterion)
         return test_loss, test_acc
-    
-    def save_model(self, model_wts, save_path):
-        torch.save(model_wts, save_path)
 
     def __main__(self):
         model = self.create_model()
@@ -170,14 +191,26 @@ class TrainOnMnist():
         optimizer = torch.optim.Adam(model.parameters(), lr=self.learning_rate)
         scheduler = lr_scheduler.StepLR(optimizer, step_size=self.num_epochs//2, gamma=0.1)
         criterion = nn.CrossEntropyLoss()
-        best_model_wts = self.train_model(model, dataloader, optimizer, scheduler, criterion)
-        model.load_state_dict(best_model_wts)
-        test_loss, test_acc = self.test_model(model, dataloader['test'], criterion)
-        print(
-            f'TEST-LOSS: {test_loss:.4f}',
-            f'TEST-ACC: {test_acc:.4f} ',
+        best_model_wts, best_val_acc, total_time = self.train_model(
+            model, 
+            dataloader, 
+            optimizer, 
+            scheduler, 
+            criterion
         )
         self.save_model(best_model_wts, self.save_path)
+        model.load_state_dict(torch.load(self.save_path))
+        test_loss, test_acc = self.test_model(model, dataloader['test'], criterion)
+        self.logger.info(f'{"-"*10}')
+        self.logger.info(
+            ' '.join([
+                f'TOTAL-TIME: {total_time//60:.0f}m{total_time%60:.0f}s',
+                f'BEST-VAL-ACC: {best_val_acc:.4f}',
+                f'TEST-LOSS: {test_loss:.4f}',
+                f'TEST-ACC: {test_acc:.4f} ',
+            ])
+        )
+
 
 if __name__ == '__main__':
-    TrainOnMnist('./config/mnist.yaml').__main__()
+    TrainOnMnist('./config/mnist.yaml')

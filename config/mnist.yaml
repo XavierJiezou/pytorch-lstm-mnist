@@ -12,8 +12,13 @@ model:
   output_size: 10 # Number of expected features in the output
 
 train:
-  num_epochs: 10 # How many epochs to use for data training
+  num_epochs: 100 # How many epochs to use for data training
   sequence_length: 28 # Length of the input sequence
   learning_rate: 0.001 # Learning_rate
   device: cuda:0 # On which a `torch.Tensor` is or will be allocated
   save_path: ./model.pth # Path to save the trained model
+
+log:
+  sink: ./log/mnist.log # Path to save the logging file
+  level: INFO # Logging level: DEBUG | INFO | WARNING | ERROR | SUCCESS | CRITICAL
+  format: '{message}' # logging output format. Example: '{time:YYYY-MM-DD at HH:mm:ss} {level} {message}'
