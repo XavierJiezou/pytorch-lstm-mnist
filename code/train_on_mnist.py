@@ -221,8 +221,10 @@ class TrainOnMnist():
         return val_loss, val_acc
 
     def save_model(self, model_wts, save_path):
+        os.makedirs(os.path.split(save_path)[0], exist_ok=True)
         torch.save(model_wts, save_path)
-
+        self.logger.info(f'The model has been saved in `{save_path}`')
+        
     def test_model(self, model, dataloader, criterion):
         test_loss, test_acc = self.eval_model(model, dataloader, criterion)
         return test_loss, test_acc

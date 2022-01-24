@@ -16,7 +16,7 @@ train:
   sequence_length: 28 # Length of the input sequence
   learning_rate: 0.001 # Learning_rate
   device: cuda:0 # On which a `torch.Tensor` is or will be allocated
-  save_path: ./model.pth # Path to save the trained model
+  save_path: ./checkpoint/mnist.pth # Path to save the trained model
 
 log:
   sink: ./log/mnist.log # Path to save the logging file
