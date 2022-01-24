@@ -1,2 +1,8 @@
+torch==1.10.1+cu113
 torchvision==0.11.2+cu113
+numpy==1.22.1
+Pillow==9.0.0
+matplotlib==3.5.1
 tqdm==4.54.1
+easydict==1.9
+loguru==0.5.3
