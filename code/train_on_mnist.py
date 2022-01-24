@@ -23,8 +23,9 @@ class TrainOnMnist():
     def __init__(self, config_fname):
         self.parse_args(EasyDict(yaml.load(open(config_fname), yaml.FullLoader)))
         self.get_logger(logger)
+        self.visualize_data()
+        self.__main__()
         self.visualize_log()
-        # self.__main__()
 
     def parse_args(self, args):
         # data options
@@ -255,4 +256,3 @@ class TrainOnMnist():
 
 if __name__ == '__main__':
     TrainOnMnist('./config/mnist.yaml')
-
