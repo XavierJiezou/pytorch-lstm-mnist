@@ -1,6 +1,7 @@
 import sys
 sys.path.append('.')
 import os
+import re
 import time
 import copy
 import yaml
@@ -22,7 +23,8 @@ class TrainOnMnist():
     def __init__(self, config_fname):
         self.parse_args(EasyDict(yaml.load(open(config_fname), yaml.FullLoader)))
         self.get_logger(logger)
-        self.__main__()
+        self.visualize_log()
+        # self.__main__()
 
     def parse_args(self, args):
         # data options
@@ -30,7 +32,7 @@ class TrainOnMnist():
         self.train_ratio = args.data.train_ratio
         self.val_ratio = args.data.val_ratio
         self.batch_size = args.data.batch_size
-        self.visualize_save = args.data.visualize_save
+        self.visualize_data_save = args.data.visualize_data_save
 
         # model options
         self.input_size = args.model.input_size
@@ -49,6 +51,7 @@ class TrainOnMnist():
         self.sink = args.log.sink
         self.level = args.log.level
         self.format = args.log.format
+        self.visualize_log_save = args.log.visualize_log_save
 
     def get_logger(self, logger):
         self.logger = logger
@@ -83,10 +86,48 @@ class TrainOnMnist():
                 plt.imshow(image.permute(1, 2, 0), cmap='gray')
                 plt.axis('off')
                 i += 1
-        os.makedirs(os.path.split(self.visualize_save)[0], exist_ok=True)
-        plt.savefig(self.visualize_save, dpi=300, bbox_inches='tight')
-        self.logger.info(
-            f'The visualization result has been saved in `{self.visualize_save}`')
+        os.makedirs(os.path.split(self.visualize_data_save)[0], exist_ok=True)
+        plt.savefig(self.visualize_data_save, dpi=300, bbox_inches='tight')
+        self.logger.info(f'The visualization data has been saved in `{self.visualize_data_save}`')
+    
+    def visualize_log(self):
+        result_dict = {
+            'Loss': {
+                'TRAIN-LOSS': [],
+                'VAL-LOSS': []
+            },
+            'Accuracy': {
+                'TRAIN-ACC': [],
+                'VAL-ACC': []
+            }
+        }
+        with open(self.sink) as f:
+            for line in f.readlines():
+                try:
+                    for i in result_dict:
+                        for j in result_dict[i]:
+                            result_dict[i][j] += [float(re.findall(f'{j}: (.*?) ', line)[0])]
+                except:
+                    pass
+
+        fig = plt.figure()
+
+        ax1 = fig.add_subplot(111)
+        ax1.plot(result_dict['Loss']['TRAIN-LOSS'], label='Train-loss')
+        ax1.plot(result_dict['Loss']['VAL-LOSS'], label='Val-loss')
+        ax1.set_xlabel('Epoch')
+        ax1.set_ylabel('Loss')
+
+        ax2 = ax1.twinx()  # this is the important function
+        ax2.plot(result_dict['Accuracy']['TRAIN-ACC'], label='Train-accuracy', linestyle='--')
+        ax2.plot(result_dict['Accuracy']['VAL-ACC'], label='Val-accuracy', linestyle='--')
+        ax2.set_ylabel('Accuracy')
+
+        fig.legend(loc=1, bbox_to_anchor=(1, 0.8), bbox_transform=ax1.transAxes)
+
+        os.makedirs(os.path.split(self.visualize_log_save)[0], exist_ok=True)
+        plt.savefig(self.visualize_log_save, dpi=300, bbox_inches='tight')
+        self.logger.info(f'The visualization result has been saved in `{self.visualize_log_save}`')
 
     def make_dataloader(self):
         dataset = self.split_dataset()
@@ -143,8 +184,8 @@ class TrainOnMnist():
                 ' '.join([
                     epoch_print_str,
                     lr_print_str,
-                    f'TRAIN_LOSS: {train_loss:.4f}',
-                    f'TRAIN_ACC: {train_acc:.4f} ',
+                    f'TRAIN-LOSS: {train_loss:.4f}',
+                    f'TRAIN-ACC: {train_acc:.4f} ',
                     f'VAL-LOSS: {val_loss:.4f}',
                     f'VAL-ACC: {val_acc:.4f} ',
                     f'EPOCH-TIME: {total_epoch_time//60:.0f}m{total_epoch_time%60:.0f}s',
@@ -214,3 +255,4 @@ class TrainOnMnist():
 
 if __name__ == '__main__':
     TrainOnMnist('./config/mnist.yaml')
+

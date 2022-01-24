@@ -3,7 +3,7 @@ data:
   train_ratio: 0.8
   val_ratio: 0.1
   batch_size: 64 # How many samples per batch to load
-  visualize_save: ./image/training_data_mnist.png
+  visualize_data_save: ./image/training_data_mnist.png
 
 model:
   input_size: 28 # Number of expected features in the input
@@ -22,3 +22,4 @@ log:
   sink: ./log/mnist.log # Path to save the logging file
   level: INFO # Logging level: DEBUG | INFO | WARNING | ERROR | SUCCESS | CRITICAL
   format: '{message}' # logging output format. Example: '{time:YYYY-MM-DD at HH:mm:ss} {level} {message}'
+  visualize_log_save: ./image/training_log_mnist.png
