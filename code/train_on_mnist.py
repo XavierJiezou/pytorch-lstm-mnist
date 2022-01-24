@@ -24,7 +24,7 @@ class TrainOnMnist():
         self.parse_args(EasyDict(yaml.load(open(config_fname), yaml.FullLoader)))
         self.get_logger(logger)
         self.visualize_data()
-        self.__main__()
+        # self.__main__()
         self.visualize_log()
 
     def parse_args(self, args):
