@@ -23,9 +23,9 @@ class TrainOnMnist():
     def __init__(self, config_fname):
         self.parse_args(EasyDict(yaml.load(open(config_fname), yaml.FullLoader)))
         self.get_logger(logger)
-        self.visualize_data()
+        # self.visualize_data()
         # self.__main__()
-        self.visualize_log()
+        # self.visualize_log()
 
     def parse_args(self, args):
         # data options
@@ -254,7 +254,17 @@ class TrainOnMnist():
                 f'TEST-ACC: {test_acc:.4f} ',
             ])
         )
+    
+    def predict(self, single_input):
+        image = plt.imread(single_input)
+        image = transforms.ToTensor()(image)
+        image = image.to(self.device)
+        model = self.create_model()
+        model.load_state_dict(torch.load(self.save_path))
+        with torch.no_grad():
+            output = model(image)
+        return output.argmax(1).item()
 
 
 if __name__ == '__main__':
-    TrainOnMnist('./config/mnist.yaml')
+    TrainOnMnist('./config/mnist.yaml').predict('./data/mnist/1/test_2.png')
