@@ -23,9 +23,9 @@ class TrainOnMnist():
     def __init__(self, config_fname):
         self.parse_args(EasyDict(yaml.load(open(config_fname), yaml.FullLoader)))
         self.get_logger(logger)
-        # self.visualize_data()
-        # self.__main__()
-        # self.visualize_log()
+        self.visualize_data()
+        self.__main__()
+        self.visualize_log()
 
     def parse_args(self, args):
         # data options
@@ -256,6 +256,14 @@ class TrainOnMnist():
         )
     
     def predict(self, single_input):
+        """Predict the label for single input image path
+
+        Args:
+            single_input (str): Path to single input image. Such as './data/mnist/1/test_2.png'.
+
+        Returns:
+            int: Label.
+        """
         image = plt.imread(single_input)
         image = transforms.ToTensor()(image)
         image = image.to(self.device)
@@ -267,4 +275,4 @@ class TrainOnMnist():
 
 
 if __name__ == '__main__':
-    TrainOnMnist('./config/mnist.yaml').predict('./data/mnist/1/test_2.png')
+    TrainOnMnist('./config/mnist.yaml')
