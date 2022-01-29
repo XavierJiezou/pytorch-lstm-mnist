@@ -20,7 +20,7 @@ Note: you must unzip the file [mnist.7z](./data/mnist.7z) before training.
 
 ## Config
 
-You can modify the [configuration file](./config/mnist.yaml).
+You can also modify the [configuration file](./config/mnist.yaml).
 
 ```yaml
 data:
