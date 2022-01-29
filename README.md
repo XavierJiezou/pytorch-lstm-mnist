@@ -16,7 +16,7 @@ cd pytorch-lstm-mnist
 python ./code/train_on_mnist.py
 ```
 
-Note: you must unzip the [mnist.7z](./data/mnist.7z) before training.
+Note: you must unzip the file [mnist.7z](./data/mnist.7z) before training.
 
 ## Config
 
