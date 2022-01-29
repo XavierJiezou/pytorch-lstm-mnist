@@ -16,9 +16,11 @@ cd pytorch-lstm-mnist
 python ./code/train_on_mnist.py
 ```
 
+Note: you must unzip the [mnist.7z](./data/mnist.7z) before training.
+
 ## Config
 
-You can modify the [configuration file](./config/mnist.yaml) before training.
+You can modify the [configuration file](./config/mnist.yaml).
 
 ```yaml
 data:
