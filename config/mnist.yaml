@@ -1,7 +1,7 @@
 data:
   data_root: ./data/mnist # Path to data
-  train_ratio: 0.8
-  val_ratio: 0.1
+  train_ratio: 0.8 # Ratio of training set
+  val_ratio: 0.1 # Ratio of validation set
   batch_size: 64 # How many samples per batch to load
   visualize_data_save: ./image/training_data_mnist.png
 
@@ -22,4 +22,4 @@ log:
   sink: ./log/mnist.log # Path to save the logging file
   level: INFO # Logging level: DEBUG | INFO | WARNING | ERROR | SUCCESS | CRITICAL
   format: '{message}' # logging output format. Example: '{time:YYYY-MM-DD at HH:mm:ss} {level} {message}'
-  visualize_log_save: ./image/training_log_mnist.png
+  visualize_log_save: ./image/training_log_mnist.png # Path to save the visualization result
